@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.crimsonlogic.bankingandloanmanagementsystem.mapper.AccountMapper">
+
+    <insert id="insertAccount" parameterType="map">
+        INSERT INTO accounts (account_number, balance, opening_date, account_status, mpin, customer_id, account_type, interest_rate, overdraft_limit)
+        VALUES (#{accountNumber}, #{balance}, #{openingDate}, #{accountStatus}, #{mpin}, #{customerId}, #{accountType}, #{interestRate}, #{overdraftLimit})
+    </insert>
+
+    <select id="getAccountsByCustomerId" resultType="map">
+        SELECT * FROM accounts WHERE customer_id = #{customerId}
+    </select>
+
+    <select id="getAccountByNumber" resultType="map">
+        SELECT * FROM accounts WHERE account_number = #{accountNumber}
+    </select>
+
+    <update id="updateBalanceAndStatus">
+        UPDATE accounts 
+        SET balance = #{balance}, account_status = #{accountStatus} 
+        WHERE account_number = #{accountNumber}
+    </update>
+
+    <update id="updateMpin">
+        UPDATE accounts SET mpin = #{mpin} WHERE account_number = #{accountNumber}
+    </update>
+
+</mapper>

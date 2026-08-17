@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.crimsonlogic.bankingandloanmanagementsystem.mapper.LoanMapper">
+
+    <resultMap id="LoanResultMap" type="com.crimsonlogic.bankingandloanmanagementsystem.entities.Loan">
+        <id property="loanId" column="loan_id"/>
+        <result property="customerId" column="customer_id"/>
+        <result property="loanType" column="loan_type"/>
+        <result property="loanAmount" column="loan_amount"/>
+        <result property="interestRate" column="interest_rate"/>
+        <result property="tenureMonths" column="tenure_months"/>
+        <result property="status" column="status"/>
+    </resultMap>
+
+    <insert id="insertLoan" parameterType="com.crimsonlogic.bankingandloanmanagementsystem.entities.Loan">
+        INSERT INTO loans (loan_id, customer_id, loan_type, loan_amount, interest_rate, tenure_months, status)
+        VALUES (#{loanId}, #{customerId}, #{loanType}, #{loanAmount}, #{interestRate}, #{tenureMonths}, #{status})
+    </insert>
+
+    <select id="getLoanById" resultMap="LoanResultMap">
+        SELECT * FROM loans WHERE loan_id = #{loanId}
+    </select>
+
+    <select id="getLoansByCustomerId" resultMap="LoanResultMap">
+        SELECT * FROM loans WHERE customer_id = #{customerId}
+    </select>
+
+    <select id="getAllLoans" resultMap="LoanResultMap">
+        SELECT * FROM loans
+    </select>
+
+    <select id="getLoansByStatus" resultMap="LoanResultMap">
+        SELECT * FROM loans WHERE status = #{status}
+    </select>
+
+    <update id="updateLoanStatus">
+        UPDATE loans SET status = #{status} WHERE loan_id = #{loanId}
+    </update>
+
+</mapper>
