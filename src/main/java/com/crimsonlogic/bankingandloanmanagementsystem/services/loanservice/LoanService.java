@@ -9,45 +9,52 @@ import com.crimsonlogic.bankingandloanmanagementsystem.entities.Loan;
 import com.crimsonlogic.bankingandloanmanagementsystem.exceptionhandling.LoanNotFoundException;
 import com.crimsonlogic.bankingandloanmanagementsystem.utility.IdGeneratorUtil;
 import com.crimsonlogic.bankingandloanmanagementsystem.utility.TableUtil;
+import com.crimsonlogic.bankingandloanmanagementsystem.utility.ValidationUtil;
 
 public class LoanService {
 
     private final LoanDao loanDao = new LoanDao();
 
-    // ==========================================
-    // ADMIN LOAN OPERATIONS
-    // ==========================================
-
     public void approveLoan(Scanner scanner) {
-        System.out.print("Enter Loan ID to Approve: ");
-        String loanId = scanner.nextLine().trim();
+        String loanId;
+        while (true) {
+            System.out.print("Enter Loan ID to Approve (e.g. LOAN0001): ");
+            loanId = scanner.nextLine().trim();
+            if (ValidationUtil.validateLoanIdFormat(loanId)) break;
+            System.out.println("--> [Format Error]: Loan ID must be in format 'LOAN' followed by 4 digits (e.g. LOAN0001).");
+        }
 
         Loan loan = loanDao.getLoanById(loanId);
         if (loan == null) {
-            throw new LoanNotFoundException("Loan with ID '" + loanId + "' does not exist.");
+            throw new LoanNotFoundException("Loan with ID '" + loanId + "' does not exist in the database.");
         }
 
         if ("APPROVED".equalsIgnoreCase(loan.getStatus())) {
-            System.out.println("--> Information: Loan " + loanId + " is already in APPROVED status.");
+            System.out.println("--> Information: Loan " + loanId + " is already APPROVED.");
             return;
         }
 
         loanDao.updateLoanStatus(loanId, "APPROVED");
         System.out.println("\n>>> Loan " + loanId + " has been successfully APPROVED! <<<");
-        System.out.printf("--> Monthly EMI of INR %.2f is now scheduled for collection.%n", loan.calculateMonthlyEmi());
+        System.out.printf("--> Monthly EMI of INR %.2f is scheduled for collection.%n", loan.calculateMonthlyEmi());
     }
 
     public void rejectLoan(Scanner scanner) {
-        System.out.print("Enter Loan ID to Reject: ");
-        String loanId = scanner.nextLine().trim();
+        String loanId;
+        while (true) {
+            System.out.print("Enter Loan ID to Reject (e.g. LOAN0001): ");
+            loanId = scanner.nextLine().trim();
+            if (ValidationUtil.validateLoanIdFormat(loanId)) break;
+            System.out.println("--> [Format Error]: Loan ID must be in format 'LOAN' followed by 4 digits (e.g. LOAN0001).");
+        }
 
         Loan loan = loanDao.getLoanById(loanId);
         if (loan == null) {
-            throw new LoanNotFoundException("Loan with ID '" + loanId + "' does not exist.");
+            throw new LoanNotFoundException("Loan with ID '" + loanId + "' does not exist in the database.");
         }
 
         if ("REJECTED".equalsIgnoreCase(loan.getStatus())) {
-            System.out.println("--> Information: Loan " + loanId + " is already in REJECTED status.");
+            System.out.println("--> Information: Loan " + loanId + " is already REJECTED.");
             return;
         }
 
@@ -56,12 +63,17 @@ public class LoanService {
     }
 
     public void findLoan(Scanner scanner) {
-        System.out.print("Enter Loan ID to search: ");
-        String loanId = scanner.nextLine().trim();
+        String loanId;
+        while (true) {
+            System.out.print("Enter Loan ID to search (e.g. LOAN0001): ");
+            loanId = scanner.nextLine().trim();
+            if (ValidationUtil.validateLoanIdFormat(loanId)) break;
+            System.out.println("--> [Format Error]: Loan ID must be in format 'LOAN' followed by 4 digits (e.g. LOAN0001).");
+        }
 
         Loan loan = loanDao.getLoanById(loanId);
         if (loan == null) {
-            throw new LoanNotFoundException("No loan record found matching ID: " + loanId);
+            throw new LoanNotFoundException("No loan found matching ID: " + loanId);
         }
 
         renderLoanTable("LOAN SEARCH RESULT - " + loanId, List.of(loan));
@@ -70,7 +82,7 @@ public class LoanService {
     public void viewAllLoans() {
         List<Loan> loans = loanDao.getAllLoans();
         if (loans == null || loans.isEmpty()) {
-            throw new LoanNotFoundException("No loan records available in the system.");
+            throw new LoanNotFoundException("No loan applications found in the database.");
         }
         renderLoanTable("ALL SYSTEM LOANS", loans);
     }
@@ -86,21 +98,17 @@ public class LoanService {
     public void viewApprovedLoans() {
         List<Loan> loans = loanDao.getLoansByStatus("APPROVED");
         if (loans == null || loans.isEmpty()) {
-            throw new LoanNotFoundException("No APPROVED loan applications found.");
+            throw new LoanNotFoundException("No APPROVED loans found.");
         }
         renderLoanTable("APPROVED ACTIVE LOANS", loans);
     }
 
-    // ==========================================
-    // CUSTOMER LOAN OPERATIONS
-    // ==========================================
-
     public void applyLoan(Scanner scanner, String customerId) {
         System.out.println("\n=== APPLY FOR A NEW LOAN ===");
-        System.out.println("1. Personal Loan (Interest Rate: 11.5%)");
-        System.out.println("2. Home Loan (Interest Rate: 8.5%)");
-        System.out.println("3. Vehicle Loan (Interest Rate: 9.25%)");
-        System.out.println("4. Education Loan (Interest Rate: 7.8%)");
+        System.out.println("1. Personal Loan (Rate: 11.5%)");
+        System.out.println("2. Home Loan (Rate: 8.5%)");
+        System.out.println("3. Vehicle Loan (Rate: 9.25%)");
+        System.out.println("4. Education Loan (Rate: 7.8%)");
 
         String loanType = "Personal Loan";
         double interestRate = 11.5;
@@ -112,17 +120,15 @@ public class LoanService {
             if ("2".equals(choice)) { loanType = "Home Loan"; interestRate = 8.5; break; }
             if ("3".equals(choice)) { loanType = "Vehicle Loan"; interestRate = 9.25; break; }
             if ("4".equals(choice)) { loanType = "Education Loan"; interestRate = 7.8; break; }
-            System.out.println("--> Invalid choice! Please select 1, 2, 3, or 4.");
+            System.out.println("--> Invalid choice! Select 1, 2, 3, or 4.");
         }
 
         double loanAmount;
         while (true) {
-            System.out.print("Enter Requested Loan Amount (INR 10,000 to 50,00,000): INR ");
+            System.out.print("Enter Loan Amount (INR 10,000 to 50,00,000): INR ");
             try {
                 loanAmount = Double.parseDouble(scanner.nextLine().trim());
-                if (loanAmount >= 10000.0 && loanAmount <= 5000000.0) {
-                    break;
-                }
+                if (loanAmount >= 10000.0 && loanAmount <= 5000000.0) break;
                 System.out.println("--> Amount must be between INR 10,000 and INR 50,00,000. Try again.");
             } catch (NumberFormatException e) {
                 System.out.println("--> Invalid number format. Try again.");
@@ -131,27 +137,25 @@ public class LoanService {
 
         int tenureMonths;
         while (true) {
-            System.out.print("Enter Loan Tenure in Months (6 to 240 months): ");
+            System.out.print("Enter Loan Tenure in Months (6 to 240): ");
             try {
                 tenureMonths = Integer.parseInt(scanner.nextLine().trim());
-                if (tenureMonths >= 6 && tenureMonths <= 240) {
-                    break;
-                }
+                if (tenureMonths >= 6 && tenureMonths <= 240) break;
                 System.out.println("--> Tenure must be between 6 and 240 months. Try again.");
             } catch (NumberFormatException e) {
                 System.out.println("--> Invalid number format. Try again.");
             }
         }
 
-        String loanId = IdGeneratorUtil.generateLoanId();[cite: 2]
+        String loanId = IdGeneratorUtil.generateLoanId();
         Loan loan = new Loan(loanId, customerId, loanType, loanAmount, interestRate, tenureMonths, "PENDING");
 
         if (loanDao.insertLoan(loan)) {
             System.out.println("\n>>> LOAN APPLICATION SUBMITTED SUCCESSFULLY! <<<");
             System.out.printf("Generated Loan ID: %s | Estimated Monthly EMI: INR %.2f%n", loanId, loan.calculateMonthlyEmi());
-            System.out.println("Application is under PENDING review by the Loan Manager.");
+            System.out.println("Status: PENDING review by the Loan Manager.");
         } else {
-            System.out.println("--> Application submission failed due to a database error.");
+            System.out.println("--> Application submission failed.");
         }
     }
 
@@ -170,7 +174,7 @@ public class LoanService {
                 : List.of();
 
         if (approved.isEmpty()) {
-            throw new LoanNotFoundException("No APPROVED loans found to calculate and view EMIs.");
+            throw new LoanNotFoundException("No APPROVED loans found for EMI calculations.");
         }
 
         renderLoanTable("APPROVED LOANS & MONTHLY EMI DETAILS", approved);
@@ -183,17 +187,22 @@ public class LoanService {
                 : List.of();
 
         if (approved.isEmpty()) {
-            throw new LoanNotFoundException("No active APPROVED loans available for EMI payments.");
+            throw new LoanNotFoundException("No active APPROVED loans available for repayment.");
         }
 
         renderLoanTable("ACTIVE LOANS FOR EMI REPAYMENT", approved);
 
-        System.out.print("\nEnter Loan ID to pay EMI: ");
-        String loanId = scanner.nextLine().trim();
+        String loanId;
+        while (true) {
+            System.out.print("\nEnter Loan ID to pay EMI (e.g. LOAN0001): ");
+            loanId = scanner.nextLine().trim();
+            if (ValidationUtil.validateLoanIdFormat(loanId)) break;
+            System.out.println("--> [Format Error]: Loan ID must be in format 'LOAN' followed by 4 digits (e.g. LOAN0001).");
+        }
 
         Loan selected = loanDao.getLoanById(loanId);
         if (selected == null || !selected.getCustomerId().equalsIgnoreCase(customerId)) {
-            throw new LoanNotFoundException("Loan ID " + loanId + " does not belong to your account.");
+            throw new LoanNotFoundException("Loan ID '" + loanId + "' does not belong to your account.");
         }
 
         if (!"APPROVED".equalsIgnoreCase(selected.getStatus())) {
@@ -202,7 +211,7 @@ public class LoanService {
         }
 
         System.out.printf("--> Monthly EMI Amount: INR %.2f%n", selected.calculateMonthlyEmi());
-        System.out.println(">>> EMI payment processed and recorded successfully! <<<");
+        System.out.println(">>> EMI payment processed successfully! <<<");
     }
 
     public void renderLoanTable(String title, List<Loan> loans) {
@@ -222,6 +231,6 @@ public class LoanService {
                 ));
             }
         }
-        TableUtil.printTable(title, headers, rows);[cite: 4]
+        TableUtil.printTable(title, headers, rows);
     }
 }

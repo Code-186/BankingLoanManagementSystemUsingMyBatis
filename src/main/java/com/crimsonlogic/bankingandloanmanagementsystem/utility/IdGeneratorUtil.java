@@ -4,57 +4,39 @@ import java.util.Random;
 
 public class IdGeneratorUtil {
 
-    private static final Random RANDOM =
-            new Random();
+    private static final Random RANDOM = new Random();
 
-    private IdGeneratorUtil() {
-    }
+    private IdGeneratorUtil() {}
 
-    private static String generateId(
-            String prefix) {
-
-        return prefix +
-                (100 + RANDOM.nextInt(900));
-    }
-
-    public static String generateAdminId() {
-
-        return generateId("ADM");
+    /**
+     * Generates a 4-digit number between 1000 and 9999.
+     */
+    private static int generate4DigitNumber() {
+        return 1000 + RANDOM.nextInt(9000); // Guarantees range [1000 - 9999]
     }
 
     public static String generateEmployeeId() {
-
-        return generateId("EMP");
+        return "EMP" + generate4DigitNumber();
     }
 
     public static String generateCustomerId() {
-
-        return generateId("CUST");
-    }
-
-    public static String generateBeneficiaryId() {
-
-        return generateId("BEN");
+        return "CUST" + generate4DigitNumber();
     }
 
     public static String generateLoanId() {
-
-        return generateId("LOAN");
+        return "LOAN" + generate4DigitNumber();
     }
 
-    public static String generateEmiId() {
-
-        return generateId("EMI");
+    public static String generateAdminId() {
+        return "ADM" + generate4DigitNumber();
     }
 
+    /**
+     * Generates a 12-digit Account Number starting with a non-zero digit.
+     */
     public static long generateAccountNumber() {
-
-        return 1000000000L
-                + RANDOM.nextInt(900000000);
-    }
-
-    public static String generateTransactionId() {
-
-        return generateId("TXN");
+        long min = 100000000000L;
+        long max = 999999999999L;
+        return min + (long) (RANDOM.nextDouble() * (max - min));
     }
 }

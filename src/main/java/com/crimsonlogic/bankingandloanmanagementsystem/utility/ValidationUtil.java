@@ -26,9 +26,7 @@ public class ValidationUtil {
     }
 
     public static boolean validateName(String name) {
-        if (name == null) {
-            return false;
-        }
+        if (name == null) return false;
         name = name.trim();
         return name.matches("^[A-Za-z]{3,}(\\s[A-Za-z]{2,})*$") && !name.matches("^(.)\\1+$");
     }
@@ -50,6 +48,22 @@ public class ValidationUtil {
         return mPin != null && mPin.matches("^\\d{4}$");
     }
 
+    public static boolean validateCustomerIdFormat(String id) {
+        return id != null && id.matches("^CUST\\d{4}$");
+    }
+
+    public static boolean validateEmployeeIdFormat(String id) {
+        return id != null && id.matches("^EMP\\d{4}$");
+    }
+
+    public static boolean validateAdminIdFormat(String id) {
+        return id != null && id.matches("^ADM\\d{4}$");
+    }
+
+    public static boolean validateLoanIdFormat(String id) {
+        return id != null && id.matches("^LOAN\\d{4}$");
+    }
+
     public static LocalDate parseAndValidateDob(String dobStr) {
         if (dobStr == null || dobStr.trim().isEmpty()) {
             return null;
@@ -67,12 +81,6 @@ public class ValidationUtil {
     public static boolean validateDesignation(String designation) {
         return designation != null && designation.trim().matches("^[A-Za-z\\s_]{2,50}$");
     }
-
-    public static boolean validateRole(String role) {
-        return designationOrRole(role);
-    }
-
-    private static boolean designationOrRole(String val) {
-        return val != null && val.trim().matches("^[A-Za-z\\s_]{2,50}$");
-    }
+    
+    
 }

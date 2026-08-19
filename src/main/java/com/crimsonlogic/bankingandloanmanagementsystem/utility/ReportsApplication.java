@@ -20,7 +20,7 @@ public class ReportsApplication {
     public void start() {
         int choice = 0;
         do {
-            menuUtil.showReportsMenu();[cite: 11]
+            menuUtil.showReportsMenu();
             System.out.print("Enter Choice: ");
             String input = scanner.nextLine().trim();
             try {
@@ -57,7 +57,7 @@ public class ReportsApplication {
     private void loanReports() {
         int choice = 0;
         do {
-            menuUtil.showLoanReportsMenu();[cite: 11]
+            menuUtil.showLoanReportsMenu();
             System.out.print("Enter Choice: ");
             String input = scanner.nextLine().trim();
             try {

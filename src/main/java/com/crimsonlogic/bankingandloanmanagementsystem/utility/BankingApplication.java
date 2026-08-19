@@ -36,7 +36,7 @@ public class BankingApplication {
     public void start() {
         int choice = 0;
         do {
-            menuUtil.showMainMenu();[cite: 11]
+            menuUtil.showMainMenu();
             System.out.print("Enter Choice : ");
             String input = scanner.nextLine().trim();
             try {
@@ -64,44 +64,73 @@ public class BankingApplication {
             }
         } while (choice != 4);
     }
-
     private void handleAdminLogin() {
         System.out.println("\n=== ADMIN LOGIN ===");
-        System.out.print("Enter Email : ");
-        String email = scanner.nextLine().trim();
-        System.out.print("Enter Password : ");
-        String password = scanner.nextLine().trim();
+        String email;
+        while (true) {
+            System.out.print("Enter Admin Email (e.g. admin@sbi.co.in): ");
+            email = scanner.nextLine().trim();
+            if (ValidationUtil.validateEmail(email)) break;
+            System.out.println("--> [Format Error]: Invalid email format! Please enter in format 'name@bank.co.in'.");
+        }
 
-        try {
-            Admin admin = authenticationService.loginAdmin(email, password);
-            if (admin == null) {
-                System.out.println("--> Invalid Password.");
+        int attemptsLeft = 3;
+        while (attemptsLeft > 0) {
+            System.out.print("Enter Password : ");
+            String password = scanner.nextLine().trim();
+
+            try {
+                Admin admin = authenticationService.loginAdmin(email, password);
+                if (admin != null) {
+                    System.out.println("\n>>> Admin Login Successful! Welcome " + admin.getName() + " (" + admin.getBankName() + ") <<<");
+                    adminMenu(admin);
+                    return;
+                }
+                attemptsLeft--;
+                if (attemptsLeft > 0) {
+                    System.out.printf("--> Invalid Password! %d attempt(s) remaining. Try again.%n", attemptsLeft);
+                } else {
+                    System.out.println("--> [Access Denied]: Maximum 3 attempts exceeded. Returning to main menu.");
+                }
+            } catch (AdminNotFoundException e) {
+                System.out.println("--> [Error]: " + e.getMessage());
                 return;
             }
-            System.out.println("\n>>> Admin Login Successful! Welcome " + admin.getName() + " (" + admin.getBankName() + ") <<<");
-            adminMenu(admin);
-        } catch (AdminNotFoundException e) {
-            System.out.println("--> [Error]: " + e.getMessage());
         }
     }
 
     private void handleEmployeeLogin() {
         System.out.println("\n=== EMPLOYEE LOGIN ===");
-        System.out.print("Enter Email : ");
-        String email = scanner.nextLine().trim();
-        System.out.print("Enter Password : ");
-        String password = scanner.nextLine().trim();
+        String email;
+        while (true) {
+            System.out.print("Enter Official Email (e.g. emp@sbi.co.in): ");
+            email = scanner.nextLine().trim();
+            if (ValidationUtil.validateEmail(email)) break;
+            System.out.println("--> [Format Error]: Invalid email format! Please enter in format 'name@bank.co.in'.");
+        }
 
-        try {
-            Employee emp = authenticationService.loginEmployee(email, password);
-            if (emp == null) {
-                System.out.println("--> Invalid Password.");
+        int attemptsLeft = 3;
+        while (attemptsLeft > 0) {
+            System.out.print("Enter Password : ");
+            String password = scanner.nextLine().trim();
+
+            try {
+                Employee emp = authenticationService.loginEmployee(email, password);
+                if (emp != null) {
+                    System.out.println("\n>>> Employee Login Successful! Welcome " + emp.getName() + " (" + emp.getBankName() + ") <<<");
+                    employeeMenu(emp);
+                    return;
+                }
+                attemptsLeft--;
+                if (attemptsLeft > 0) {
+                    System.out.printf("--> Invalid Password! %d attempt(s) remaining. Try again.%n", attemptsLeft);
+                } else {
+                    System.out.println("--> [Access Denied]: Maximum 3 attempts exceeded. Returning to main menu.");
+                }
+            } catch (EmployeeNotFoundException e) {
+                System.out.println("--> [Error]: " + e.getMessage());
                 return;
             }
-            System.out.println("\n>>> Employee Login Successful! Welcome " + emp.getName() + " (" + emp.getBankName() + ") <<<");
-            employeeMenu(emp);
-        } catch (EmployeeNotFoundException e) {
-            System.out.println("--> [Error]: " + e.getMessage());
         }
     }
 
@@ -117,28 +146,44 @@ public class BankingApplication {
         }
 
         System.out.println("\n=== CUSTOMER LOGIN ===");
-        System.out.print("Enter Email : ");
-        String email = scanner.nextLine().trim();
-        System.out.print("Enter Password : ");
-        String password = scanner.nextLine().trim();
+        String email;
+        while (true) {
+            System.out.print("Enter Registered Email (e.g. user@gmail.com): ");
+            email = scanner.nextLine().trim();
+            if (ValidationUtil.validateEmail(email)) break;
+            System.out.println("--> [Format Error]: Invalid email format! Please enter in format 'user@example.com'.");
+        }
 
-        try {
-            Customer cust = authenticationService.loginCustomer(email, password);
-            if (cust == null) {
-                System.out.println("--> Invalid Password.");
+        int attemptsLeft = 3;
+        while (attemptsLeft > 0) {
+            System.out.print("Enter Password : ");
+            String password = scanner.nextLine().trim();
+
+            try {
+                Customer cust = authenticationService.loginCustomer(email, password);
+                if (cust != null) {
+                    System.out.println("\n>>> Customer Login Successful! Welcome " + cust.getName() + " (" + cust.getBankName() + ") <<<");
+                    customerMenu(cust);
+                    return;
+                }
+                attemptsLeft--;
+                if (attemptsLeft > 0) {
+                    System.out.printf("--> Invalid Password! %d attempt(s) remaining. Try again.%n", attemptsLeft);
+                } else {
+                    System.out.println("--> [Access Denied]: Maximum 3 attempts exceeded. Returning to main menu.");
+                }
+            } catch (CustomerNotFoundException e) {
+                System.out.println("--> [Error]: " + e.getMessage());
                 return;
             }
-            System.out.println("\n>>> Customer Login Successful! Welcome " + cust.getName() + " (" + cust.getBankName() + ") <<<");
-            customerMenu(cust);
-        } catch (CustomerNotFoundException e) {
-            System.out.println("--> [Error]: " + e.getMessage());
         }
     }
+    
 
     private void adminMenu(Admin admin) {
         int adminChoice = 0;
         do {
-            menuUtil.showAdminMenu();[cite: 11]
+            menuUtil.showAdminMenu();
             System.out.print("Enter Admin Choice : ");
             String input = scanner.nextLine().trim();
             try {
@@ -178,7 +223,7 @@ public class BankingApplication {
     private void employeeManagementMenu(Admin admin) {
         int choice = 0;
         do {
-            menuUtil.showEmployeeManagementMenu();[cite: 11]
+            menuUtil.showEmployeeManagementMenu();
             System.out.print("Enter Choice : ");
             String input = scanner.nextLine().trim();
             try {
@@ -209,7 +254,7 @@ public class BankingApplication {
     private void viewManagementMenu() {
         int choice = 0;
         do {
-            menuUtil.showViewManagementMenu();[cite: 11]
+            menuUtil.showViewManagementMenu();
             System.out.print("Enter Choice : ");
             String input = scanner.nextLine().trim();
             try {
@@ -249,7 +294,7 @@ public class BankingApplication {
     private void employeeMenu(Employee emp) {
         int employeeChoice = 0;
         do {
-            menuUtil.showEmployeeMenu();[cite: 11]
+            menuUtil.showEmployeeMenu();
             System.out.print("Enter Employee Choice : ");
             String input = scanner.nextLine().trim();
             try {
@@ -296,7 +341,7 @@ public class BankingApplication {
     private void customerMenu(Customer cust) {
         int customerChoice = 0;
         do {
-            menuUtil.showCustomerMenu();[cite: 11]
+            menuUtil.showCustomerMenu();
             System.out.print("Enter Customer Choice : ");
             String input = scanner.nextLine().trim();
             try {

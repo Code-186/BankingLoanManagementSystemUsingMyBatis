@@ -36,42 +36,45 @@ public class CustomerService {
 
         String name;
         while (true) {
-            System.out.print("Enter Full Name: ");
+            System.out.print("Enter Full Name (e.g. John Doe): ");
             name = scanner.nextLine().trim();
             if (ValidationUtil.validateName(name)) break;
-            System.out.println("--> Invalid Name! Letters only (minimum 3 characters, no repetitive sequences).");
+            System.out.println("--> [Format Error]: Name must contain only alphabets (min 3 chars, no repeating sequences). Please enter in format 'FirstName LastName'.");
         }
 
         String email;
         while (true) {
-            System.out.print("Enter Email ID: ");
+            System.out.print("Enter Email ID (e.g. user@domain.com): ");
             email = scanner.nextLine().trim();
             if (ValidationUtil.validateEmail(email)) break;
-            System.out.println("--> Invalid Email format!");
+            System.out.println("--> [Format Error]: Invalid Email! Please enter in standard format 'name@example.com'.");
         }
 
         String phone;
         while (true) {
-            System.out.print("Enter 10-Digit Phone Number: ");
+            System.out.print("Enter 10-Digit Phone Number (e.g. 9876543210): ");
             phone = scanner.nextLine().trim();
             if (ValidationUtil.validatePhone(phone)) break;
-            System.out.println("--> Phone must start with 6-9 and contain 10 digits.");
+            System.out.println("--> [Format Error]: Phone number must start with 6, 7, 8, or 9 and have exactly 10 digits.");
         }
 
         String password;
         while (true) {
-            System.out.print("Enter Password: ");
+            System.out.println("\n--> Password Policy: Length 8-20 characters, containing at least 1 uppercase letter, 1 lowercase letter, 1 digit, and 1 special character (@#$%^&+=!).");
+            System.out.print("Enter Password (e.g. Cust@1234): ");
             password = scanner.nextLine().trim();
-            if (ValidationUtil.validatePassword(password)) break;
-            System.out.println("--> Password must be 8-20 chars with uppercase, lowercase, digit, and special char.");
+            if (ValidationUtil.validatePassword(password)) {
+                break;
+            }
+            System.out.println("--> [Format Error]: Password does not meet criteria. Minimum 8 characters, with uppercase, lowercase, digit, and special symbol required.");
         }
 
         LocalDate dob;
         while (true) {
-            System.out.print("Enter Date of Birth (dd/MM/yyyy): ");
+            System.out.print("Enter Date of Birth (dd/MM/yyyy, e.g. 15/08/1998): ");
             dob = ValidationUtil.parseAndValidateDob(scanner.nextLine().trim());
             if (dob != null) break;
-            System.out.println("--> Invalid DOB! Must be in format dd/MM/yyyy and age >= 18.");
+            System.out.println("--> [Format Error]: Invalid DOB! Format must be 'dd/MM/yyyy' and age must be at least 18 years.");
         }
 
         System.out.print("Enter Address (Optional, press Enter to skip): ");
@@ -86,37 +89,43 @@ public class CustomerService {
             System.out.print("Enter Nominee Relationship: ");
             nomineeRel = scanner.nextLine().trim();
             while (true) {
-                System.out.print("Enter Nominee Phone: ");
+                System.out.print("Enter Nominee 10-Digit Phone: ");
                 nomineePhone = scanner.nextLine().trim();
                 if (ValidationUtil.validatePhone(nomineePhone)) break;
-                System.out.println("--> Invalid nominee phone number.");
+                System.out.println("--> [Format Error]: Nominee phone must start with 6-9 and have 10 digits.");
             }
         }
 
-        String custId = IdGeneratorUtil.generateCustomerId();[cite: 2]
+        String custId = IdGeneratorUtil.generateCustomerId();
         Customer customer = new Customer(custId, name, phone, email, address, PasswordUtil.hash(password),
                 dob, bankName, "REGISTERED", branchId, nomineeName, nomineeRel, nomineePhone);
 
         if (customerDao.insertCustomer(customer)) {
             System.out.println("\n>>> CUSTOMER REGISTERED SUCCESSFULLY! <<<");
             renderCustomerTable("REGISTERED CUSTOMER DETAILS", List.of(customer));
-            System.out.println("--> Status is 'REGISTERED'. Visit your branch employee to open and activate your bank account.");
+            System.out.println("--> Status is 'REGISTERED'. Visit branch " + branchId + " to open your account.");
         } else {
             System.out.println("--> Registration failed. Email ID might already be registered in the system.");
         }
     }
 
     public void viewCustomer(Scanner scanner, String allowedBranchId) {
-        System.out.print("Enter Customer ID: ");
-        String customerId = scanner.nextLine().trim();
+        String customerId;
+        while (true) {
+            System.out.print("Enter Customer ID (e.g. CUST0001): ");
+            customerId = scanner.nextLine().trim();
+            if (ValidationUtil.validateCustomerIdFormat(customerId)) break;
+            System.out.println("--> [Format Error]: Customer ID must be in format 'CUST' followed by 4 digits (e.g. CUST0001).");
+        }
 
         Customer customer = customerDao.getCustomerById(customerId);
         if (customer == null) {
-            throw new CustomerNotFoundException("Customer with ID '" + customerId + "' does not exist.");
+            throw new CustomerNotFoundException("Customer with ID '" + customerId + "' was not found in the database.");
         }
 
         if (allowedBranchId != null && !customer.getBranchId().equalsIgnoreCase(allowedBranchId)) {
-            throw new CustomerNotFoundException("Customer does not belong to your assigned branch (" + allowedBranchId + ").");
+            throw new CustomerNotFoundException("Customer belongs to branch '" + customer.getBranchId() 
+                    + "', not your assigned branch ('" + allowedBranchId + "').");
         }
 
         renderCustomerTable("CUSTOMER PROFILE", List.of(customer));
@@ -125,7 +134,7 @@ public class CustomerService {
     public void viewAllCustomers() {
         List<Customer> customers = customerDao.getAllCustomers();
         if (customers == null || customers.isEmpty()) {
-            throw new CustomerNotFoundException("No customers registered across the system.");
+            throw new CustomerNotFoundException("No customer records found in the database.");
         }
         renderCustomerTable("ALL REGISTERED CUSTOMERS", customers);
     }
@@ -133,32 +142,36 @@ public class CustomerService {
     public void viewBranchCustomers(String branchId) {
         List<Customer> customers = customerDao.getCustomersByBranchId(branchId);
         if (customers == null || customers.isEmpty()) {
-            throw new CustomerNotFoundException("No customers registered under branch: " + branchId);
+            throw new CustomerNotFoundException("No customers registered under branch " + branchId);
         }
         renderCustomerTable("BRANCH CUSTOMER DIRECTORY (" + branchId + ")", customers);
     }
 
     public void deleteCustomer(Scanner scanner) {
-        System.out.print("Enter Customer ID to Deactivate: ");
-        String customerId = scanner.nextLine().trim();
+        String customerId;
+        while (true) {
+            System.out.print("Enter Customer ID to Deactivate (e.g. CUST0001): ");
+            customerId = scanner.nextLine().trim();
+            if (ValidationUtil.validateCustomerIdFormat(customerId)) break;
+            System.out.println("--> [Format Error]: Customer ID must be in format 'CUST' followed by 4 digits (e.g. CUST0001).");
+        }
 
         Customer customer = customerDao.getCustomerById(customerId);
         if (customer == null) {
-            throw new CustomerNotFoundException("Customer ID '" + customerId + "' not found.");
+            throw new CustomerNotFoundException("Customer with ID '" + customerId + "' was not found in the database.");
         }
 
         customerDao.updateCustomerStatus(customerId, "INACTIVE");
         System.out.println("--> Customer " + customerId + " status has been set to INACTIVE.");
     }
 
-    // Profile updates
     public void updateCustomerPhone(Scanner scanner, Customer customer) {
         String phone;
         while (true) {
-            System.out.print("Enter New 10-Digit Phone Number: ");
+            System.out.print("Enter New 10-Digit Phone Number (e.g. 9876543210): ");
             phone = scanner.nextLine().trim();
             if (ValidationUtil.validatePhone(phone)) break;
-            System.out.println("--> Invalid Phone! Must start with 6-9.");
+            System.out.println("--> [Format Error]: Phone must start with 6-9 and have 10 digits.");
         }
         customerDao.updateCustomerPhone(customer.getCustomerId(), phone);
         customer.setPhoneNumber(phone);
@@ -176,10 +189,10 @@ public class CustomerService {
     public void updateNomineeDetails(Scanner scanner, Customer customer) {
         String name;
         while (true) {
-            System.out.print("Enter Nominee Name: ");
+            System.out.print("Enter Nominee Full Name: ");
             name = scanner.nextLine().trim();
             if (ValidationUtil.validateName(name)) break;
-            System.out.println("--> Invalid Nominee Name!");
+            System.out.println("--> [Format Error]: Invalid Name! Must be letters only (min 3 chars).");
         }
 
         System.out.print("Enter Nominee Relationship: ");
@@ -187,10 +200,10 @@ public class CustomerService {
 
         String phone;
         while (true) {
-            System.out.print("Enter Nominee Phone Number: ");
+            System.out.print("Enter Nominee 10-Digit Phone: ");
             phone = scanner.nextLine().trim();
             if (ValidationUtil.validatePhone(phone)) break;
-            System.out.println("--> Invalid Nominee Phone!");
+            System.out.println("--> [Format Error]: Nominee phone must start with 6-9 and have 10 digits.");
         }
 
         customerDao.updateCustomerNominee(customer.getCustomerId(), name, rel, phone);
@@ -203,10 +216,13 @@ public class CustomerService {
     public void changePassword(Scanner scanner, Customer customer) {
         String newPass;
         while (true) {
+            System.out.println("\n--> Password Policy: Length 8-20 characters, with uppercase, lowercase, digit, and special symbol.");
             System.out.print("Enter New Password: ");
             newPass = scanner.nextLine().trim();
-            if (ValidationUtil.validatePassword(newPass)) break;
-            System.out.println("--> Password must be 8-20 chars with uppercase, lowercase, digit, and special char.");
+            if (ValidationUtil.validatePassword(newPass)) {
+                break;
+            }
+            System.out.println("--> [Format Error]: Password must be 8-20 characters long with uppercase, lowercase, digit, and special symbol (@#$%^&+=!).");
         }
 
         customerDao.updateCustomerPassword(customer.getCustomerId(), PasswordUtil.hash(newPass));
@@ -223,6 +239,6 @@ public class CustomerService {
                 rows.add(List.of(c.getCustomerId(), c.getName(), c.getEmail(), c.getPhoneNumber(), c.getBankName(), c.getBranchId(), c.getStatus(), nominee));
             }
         }
-        TableUtil.printTable(title, headers, rows);[cite: 4]
+        TableUtil.printTable(title, headers, rows);
     }
 }

@@ -31,17 +31,23 @@ public class AccountService {
 
     public void openAccount(Scanner scanner, Employee employee) {
         System.out.println("\n=== OPEN BANK ACCOUNT ===");
-        System.out.print("Enter Customer ID: ");
-        String customerId = scanner.nextLine().trim();
+
+        String customerId;
+        while (true) {
+            System.out.print("Enter Customer ID (e.g. CUST0001): ");
+            customerId = scanner.nextLine().trim();
+            if (ValidationUtil.validateCustomerIdFormat(customerId)) break;
+            System.out.println("--> [Format Error]: Customer ID must be in format 'CUST' followed by 4 digits (e.g. CUST0001).");
+        }
 
         Customer customer = customerDao.getCustomerById(customerId);
         if (customer == null) {
-            throw new CustomerNotFoundException("Customer ID '" + customerId + "' not found.");
+            throw new CustomerNotFoundException("Customer with ID '" + customerId + "' was not found in the database.");
         }
 
         if (!customer.getBranchId().equalsIgnoreCase(employee.getBranchId())) {
-            throw new CustomerNotFoundException("Customer belongs to branch " + customer.getBranchId()
-                    + ", but you are operating branch " + employee.getBranchId());
+            throw new CustomerNotFoundException("Customer belongs to branch '" + customer.getBranchId()
+                    + "', but you are operating branch '" + employee.getBranchId() + "'.");
         }
 
         System.out.println("Select Account Type:");
@@ -57,12 +63,12 @@ public class AccountService {
             String choice = scanner.nextLine().trim();
             if ("1".equals(choice)) {
                 accountType = "SAVINGS";
-                minBalance = SAVINGS_MIN_BALANCE;
+                minBalance = 500.0; // SAVINGS_MIN_BALANCE
                 extraParam = 4.0;
                 break;
             } else if ("2".equals(choice)) {
                 accountType = "CURRENT";
-                minBalance = CURRENT_MIN_BALANCE;
+                minBalance = 1000.0; // CURRENT_MIN_BALANCE
                 extraParam = 10000.0;
                 break;
             }
@@ -74,9 +80,7 @@ public class AccountService {
             System.out.printf("Enter Initial Deposit (Minimum INR %.2f): INR ", minBalance);
             try {
                 initialDeposit = Double.parseDouble(scanner.nextLine().trim());
-                if (initialDeposit >= minBalance) {
-                    break;
-                }
+                if (initialDeposit >= minBalance) break;
                 System.out.printf("--> Amount is below minimum balance requirement of INR %.2f. Try again.%n", minBalance);
             } catch (NumberFormatException e) {
                 System.out.println("--> Invalid amount format. Try again.");
@@ -85,17 +89,18 @@ public class AccountService {
 
         String mpin;
         while (true) {
-            System.out.print("Set 4-Digit Account MPIN: ");
+            System.out.print("Set 4-Digit Account MPIN (e.g. 1234): ");
             mpin = scanner.nextLine().trim();
-            if (ValidationUtil.validateMPin(mpin)) {
-                break;
-            }
-            System.out.println("--> Invalid MPIN! Must be exactly 4 digits.");
+            if (ValidationUtil.validateMPin(mpin)) break;
+            System.out.println("--> [Format Error]: MPIN must be strictly 4 numeric digits (0000 to 9999).");
         }
 
-        String accountNumber = String.valueOf(IdGeneratorUtil.generateAccountNumber());[cite: 2]
+        String accountNumber = String.valueOf(IdGeneratorUtil.generateAccountNumber());
 
+        // 1. Declare and initialize params FIRST
         Map<String, Object> params = new HashMap<>();
+        
+        // 2. Put values into params
         params.put("accountNumber", accountNumber);
         params.put("balance", initialDeposit);
         params.put("openingDate", LocalDate.now());
@@ -112,25 +117,30 @@ public class AccountService {
             params.put("overdraftLimit", extraParam);
         }
 
+        // 3. Persist to DB via DAO
         if (accountDao.insertAccount(params)) {
             customerDao.updateCustomerStatus(customerId, "ACTIVE");
             System.out.println("\n>>> ACCOUNT OPENED AND ACTIVATED SUCCESSFULLY! <<<");
             List<String> headers = List.of("ACCOUNT NUMBER", "CUSTOMER ID", "TYPE", "BALANCE (INR)", "STATUS", "BRANCH");
             List<List<String>> rows = List.of(List.of(accountNumber, customerId, accountType, String.format("%.2f", initialDeposit), "ACTIVE", employee.getBranchId()));
-            TableUtil.printTable("OPENED ACCOUNT SUMMARY", headers, rows);[cite: 4]
+            TableUtil.printTable("OPENED ACCOUNT SUMMARY", headers, rows);
         } else {
             System.out.println("--> Failed to persist account to database.");
         }
     }
-
     public void deposit(Scanner scanner) {
         System.out.println("\n=== DEPOSIT FUNDS ===");
-        System.out.print("Enter 12-Digit Account Number: ");
-        String accountNumber = scanner.nextLine().trim();
+        String accountNumber;
+        while (true) {
+            System.out.print("Enter 12-Digit Account Number: ");
+            accountNumber = scanner.nextLine().trim();
+            if (ValidationUtil.validateAccountNumber(accountNumber)) break;
+            System.out.println("--> [Format Error]: Account number must be exactly 12 digits.");
+        }
 
         Map<String, Object> account = accountDao.getAccountByNumber(accountNumber);
         if (account == null) {
-            throw new AccountNotFoundException("Account number '" + accountNumber + "' not found.");
+            throw new AccountNotFoundException("Account number '" + accountNumber + "' was not found in the database.");
         }
 
         double amount;
@@ -138,9 +148,7 @@ public class AccountService {
             System.out.print("Enter Deposit Amount (Max INR 10,00,000): INR ");
             try {
                 amount = Double.parseDouble(scanner.nextLine().trim());
-                if (amount > 0 && amount <= 1000000.0) {
-                    break;
-                }
+                if (amount > 0 && amount <= 1000000.0) break;
                 System.out.println("--> Amount must be between INR 1 and INR 10,00,000. Try again.");
             } catch (NumberFormatException e) {
                 System.out.println("--> Invalid numerical input.");
@@ -159,16 +167,21 @@ public class AccountService {
 
     public void withdraw(Scanner scanner) {
         System.out.println("\n=== WITHDRAW FUNDS ===");
-        System.out.print("Enter 12-Digit Account Number: ");
-        String accountNumber = scanner.nextLine().trim();
+        String accountNumber;
+        while (true) {
+            System.out.print("Enter 12-Digit Account Number: ");
+            accountNumber = scanner.nextLine().trim();
+            if (ValidationUtil.validateAccountNumber(accountNumber)) break;
+            System.out.println("--> [Format Error]: Account number must be exactly 12 digits.");
+        }
 
         Map<String, Object> account = accountDao.getAccountByNumber(accountNumber);
         if (account == null) {
-            throw new AccountNotFoundException("Account number '" + accountNumber + "' not found.");
+            throw new AccountNotFoundException("Account number '" + accountNumber + "' was not found in the database.");
         }
 
         if ("INACTIVE".equalsIgnoreCase((String) account.get("account_status"))) {
-            throw new AccountInactiveException("Account is INACTIVE. Deposit funds to reactivate.");
+            throw new AccountInactiveException("Account is INACTIVE. Please deposit funds to reactivate.");
         }
 
         double currentBal = ((Number) account.get("balance")).doubleValue();
@@ -191,12 +204,19 @@ public class AccountService {
             }
         }
 
-        System.out.print("Enter 4-Digit MPIN: ");
-        String enteredMpin = scanner.nextLine().trim();
+        String enteredMpin;
+        while (true) {
+            System.out.print("Enter 4-Digit MPIN: ");
+            enteredMpin = scanner.nextLine().trim();
+            if (ValidationUtil.validateMPin(enteredMpin)) {
+                break;
+            }
+            System.out.println("--> [Format Error]: MPIN must be strictly 4 numeric digits.");
+        }
 
-        String storedMpin = (String) account.get("mpin");
-        if (!PasswordUtil.verify(enteredMpin, storedMpin)) {
-            throw new InvalidMPINException("Incorrect MPIN! Withdrawal transaction denied.");
+        String storedMpinHash = (String) account.get("mpin");
+        if (!PasswordUtil.verify(enteredMpin, storedMpinHash)) {
+            throw new InvalidMPINException("Incorrect MPIN! Transaction aborted.");
         }
 
         double newBal = currentBal - amount;
@@ -228,6 +248,6 @@ public class AccountService {
                     String.valueOf(a.get("account_status"))
             ));
         }
-        TableUtil.printTable("MY LINKED BANK ACCOUNTS", headers, rows);[cite: 4]
+        TableUtil.printTable("MY LINKED BANK ACCOUNTS", headers, rows);
     }
 }

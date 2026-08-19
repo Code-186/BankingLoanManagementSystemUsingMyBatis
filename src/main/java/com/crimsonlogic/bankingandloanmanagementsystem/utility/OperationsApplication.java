@@ -20,7 +20,7 @@ public class OperationsApplication {
     public void loanManagementMenu() {
         int loanChoice = 0;
         do {
-            menuUtil.showAdminLoanManagementMenu();[cite: 11]
+            menuUtil.showAdminLoanManagementMenu();
             System.out.print("Enter Choice: ");
             String input = scanner.nextLine().trim();
             try {
@@ -64,7 +64,7 @@ public class OperationsApplication {
     public void customerLoanMenu(String customerId) {
         int choice = 0;
         do {
-            menuUtil.customerLoanMenu();[cite: 11]
+            menuUtil.customerLoanMenu();
             System.out.print("Enter Choice: ");
             String input = scanner.nextLine().trim();
             try {
