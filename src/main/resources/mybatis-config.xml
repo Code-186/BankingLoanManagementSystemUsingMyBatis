@@ -24,7 +24,7 @@ PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
                           value="root"/>
 
                 <property name="password"
-                          value="password"/>
+                          value="Aishu@215"/>
 
             </dataSource>
 
@@ -39,6 +39,7 @@ PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
         <mapper resource="mapper/CustomerMapper.xml"/>
         <mapper resource="mapper/AccountMapper.xml"/>
         <mapper resource="mapper/LoanMapper.xml"/>
+        <mapper resource="mapper/EmiMapper.xml"/>
    <!--      <mapper resource="mapper/BeneficiaryMapper.xml"/> -->
     <!--       <mapper resource="mapper/TransactionMapper.xml"/>-->
 

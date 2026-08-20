@@ -9,20 +9,16 @@ public class EMI {
     private String loanId;
     private double emiAmount;
     private LocalDate dueDate;
-
     private boolean paid;
     private String status;
 
-    public EMI() {
-    }
+    // Association field
+    private String customerName;
+    private String customerEmail;
 
-    public EMI(String emiId,
-    		String loanId,
-               double emiAmount,
-               LocalDate dueDate,
-               boolean paid,
-               String status) {
+    public EMI() {}
 
+    public EMI(String emiId, String loanId, double emiAmount, LocalDate dueDate, boolean paid, String status) {
         this.emiId = emiId;
         this.loanId = loanId;
         this.emiAmount = emiAmount;
@@ -31,80 +27,36 @@ public class EMI {
         this.status = status;
     }
 
-    public String getEmiId() {
-        return emiId;
-    }
+    public String getEmiId() { return emiId; }
+    public void setEmiId(String emiId) { this.emiId = emiId; }
 
-    public void setEmiId(String emiId) {
-        this.emiId = emiId;
-    }
+    public String getLoanId() { return loanId; }
+    public void setLoanId(String loanId) { this.loanId = loanId; }
 
-    public String getLoanId() {
-        return loanId;
-    }
+    public double getEmiAmount() { return emiAmount; }
+    public void setEmiAmount(double emiAmount) { this.emiAmount = emiAmount; }
 
-    public void setLoanId(String loanId) {
-        this.loanId = loanId;
-    }
+    public LocalDate getDueDate() { return dueDate; }
+    public void setDueDate(LocalDate dueDate) { this.dueDate = dueDate; }
 
-    public double getEmiAmount() {
-        return emiAmount;
-    }
+    public boolean isPaid() { return paid; }
+    public void setPaid(boolean paid) { this.paid = paid; }
 
-    public void setEmiAmount(double emiAmount) {
-        this.emiAmount = emiAmount;
-    }
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
 
-    public LocalDate getDueDate() {
-        return dueDate;
-    }
+    public String getCustomerName() { return customerName; }
+    public void setCustomerName(String customerName) { this.customerName = customerName; }
 
-    public void setDueDate(LocalDate dueDate) {
-        this.dueDate = dueDate;
-    }
-
-    public boolean isPaid() {
-        return paid;
-    }
-
-    public void setPaid(boolean paid) {
-        this.paid = paid;
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
-    }
-
-    @Override
-    public String toString() {
-        return "EMI{" +
-                "emiId=" + emiId +
-                ", loanId=" + loanId +
-                ", emiAmount=" + emiAmount +
-                ", dueDate=" + dueDate +
-                ", paid=" + paid +
-                ", status='" + status + '\'' +
-                '}';
-    }
+    public String getCustomerEmail() { return customerEmail; }
+    public void setCustomerEmail(String customerEmail) { this.customerEmail = customerEmail; }
 
     @Override
     public boolean equals(Object o) {
-
-        if (this == o) {
-            return true;
-        }
-
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
         EMI emi = (EMI) o;
-
-        return emiId == emi.emiId;
+        return Objects.equals(emiId, emi.emiId);
     }
 
     @Override

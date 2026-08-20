@@ -143,6 +143,21 @@ public class AccountService {
             throw new AccountNotFoundException("Account number '" + accountNumber + "' was not found in the database.");
         }
 
+        // --- MPIN Verification Block ---
+        String enteredMpin;
+        while (true) {
+            System.out.print("Enter 4-Digit MPIN: ");
+            enteredMpin = scanner.nextLine().trim();
+            if (ValidationUtil.validateMPin(enteredMpin)) break;
+            System.out.println("--> [Format Error]: MPIN must be strictly 4 numeric digits (0000 to 9999).");
+        }
+
+        String storedMpin = (String) account.get("mpin");
+        if (!PasswordUtil.verify(enteredMpin, storedMpin)) {
+            throw new InvalidMPINException("Incorrect MPIN! Deposit aborted.");
+        }
+        // -------------------------------
+
         double amount;
         while (true) {
             System.out.print("Enter Deposit Amount (Max INR 10,00,000): INR ");

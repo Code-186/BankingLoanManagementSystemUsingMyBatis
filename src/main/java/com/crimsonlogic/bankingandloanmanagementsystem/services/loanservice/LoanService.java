@@ -1,10 +1,13 @@
 package com.crimsonlogic.bankingandloanmanagementsystem.services.loanservice;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
+import com.crimsonlogic.bankingandloanmanagementsystem.dao.EmiDao;
 import com.crimsonlogic.bankingandloanmanagementsystem.dao.LoanDao;
+import com.crimsonlogic.bankingandloanmanagementsystem.entities.EMI;
 import com.crimsonlogic.bankingandloanmanagementsystem.entities.Loan;
 import com.crimsonlogic.bankingandloanmanagementsystem.exceptionhandling.LoanNotFoundException;
 import com.crimsonlogic.bankingandloanmanagementsystem.utility.IdGeneratorUtil;
@@ -14,6 +17,7 @@ import com.crimsonlogic.bankingandloanmanagementsystem.utility.ValidationUtil;
 public class LoanService {
 
     private final LoanDao loanDao = new LoanDao();
+    private final EmiDao emiDao = new EmiDao(); // Injected DAO
 
     public void approveLoan(Scanner scanner) {
         String loanId;
@@ -35,8 +39,20 @@ public class LoanService {
         }
 
         loanDao.updateLoanStatus(loanId, "APPROVED");
+
+        // --- Auto-generate EMI Schedule in DB ---
+        double monthlyEmi = loan.calculateMonthlyEmi();
+        LocalDate nextDueDate = LocalDate.now().plusMonths(1);
+
+        for (int i = 1; i <= loan.getTenureMonths(); i++) {
+            String emiId = "EMI" + String.format("%04d", (int) (Math.random() * 9000 + 1000));
+            EMI emi = new EMI(emiId, loanId, Math.round(monthlyEmi * 100.0) / 100.0, nextDueDate, false, "PENDING");
+            emiDao.insertEmi(emi);
+            nextDueDate = nextDueDate.plusMonths(1);
+        }
+
         System.out.println("\n>>> Loan " + loanId + " has been successfully APPROVED! <<<");
-        System.out.printf("--> Monthly EMI of INR %.2f is scheduled for collection.%n", loan.calculateMonthlyEmi());
+        System.out.printf("--> %d Monthly EMIs of INR %.2f generated & scheduled.%n", loan.getTenureMonths(), monthlyEmi);
     }
 
     public void rejectLoan(Scanner scanner) {
@@ -167,51 +183,57 @@ public class LoanService {
         renderLoanTable("MY LOAN APPLICATIONS", loans);
     }
 
+    // Displays real EMI records joined with Customer details
     public void viewEMIs(String customerId) {
-        List<Loan> loans = loanDao.getLoansByCustomerId(customerId);
-        List<Loan> approved = (loans != null)
-                ? loans.stream().filter(l -> "APPROVED".equalsIgnoreCase(l.getStatus())).toList()
-                : List.of();
-
-        if (approved.isEmpty()) {
-            throw new LoanNotFoundException("No APPROVED loans found for EMI calculations.");
+        List<EMI> emis = emiDao.getEmisByCustomerId(customerId);
+        if (emis == null || emis.isEmpty()) {
+            throw new LoanNotFoundException("No EMI schedules found for your approved loans.");
         }
 
-        renderLoanTable("APPROVED LOANS & MONTHLY EMI DETAILS", approved);
+        List<String> headers = List.of("EMI ID", "CUSTOMER NAME", "EMAIL", "LOAN ID", "AMOUNT (INR)", "DUE DATE", "STATUS");
+        List<List<String>> rows = new ArrayList<>();
+        for (EMI e : emis) {
+            rows.add(List.of(
+                    e.getEmiId(),
+                    e.getCustomerName() != null ? e.getCustomerName() : "N/A",
+                    e.getCustomerEmail() != null ? e.getCustomerEmail() : "N/A",
+                    e.getLoanId(),
+                    String.format("%.2f", e.getEmiAmount()),
+                    e.getDueDate().toString(),
+                    e.getStatus()
+            ));
+        }
+        TableUtil.printTable("CUSTOMER EMI REPAYMENT SCHEDULE", headers, rows);
     }
 
     public void payEMI(Scanner scanner, String customerId) {
-        List<Loan> loans = loanDao.getLoansByCustomerId(customerId);
-        List<Loan> approved = (loans != null)
-                ? loans.stream().filter(l -> "APPROVED".equalsIgnoreCase(l.getStatus())).toList()
+        List<EMI> emis = emiDao.getEmisByCustomerId(customerId);
+        List<EMI> pendingEmis = (emis != null) 
+                ? emis.stream().filter(e -> !e.isPaid()).toList() 
                 : List.of();
 
-        if (approved.isEmpty()) {
-            throw new LoanNotFoundException("No active APPROVED loans available for repayment.");
+        if (pendingEmis.isEmpty()) {
+            throw new LoanNotFoundException("No pending EMI installments available for repayment.");
         }
 
-        renderLoanTable("ACTIVE LOANS FOR EMI REPAYMENT", approved);
-
-        String loanId;
-        while (true) {
-            System.out.print("\nEnter Loan ID to pay EMI (e.g. LOAN0001): ");
-            loanId = scanner.nextLine().trim();
-            if (ValidationUtil.validateLoanIdFormat(loanId)) break;
-            System.out.println("--> [Format Error]: Loan ID must be in format 'LOAN' followed by 4 digits (e.g. LOAN0001).");
+        List<String> headers = List.of("EMI ID", "LOAN ID", "DUE DATE", "AMOUNT (INR)", "STATUS");
+        List<List<String>> rows = new ArrayList<>();
+        for (EMI e : pendingEmis) {
+            rows.add(List.of(e.getEmiId(), e.getLoanId(), e.getDueDate().toString(), String.format("%.2f", e.getEmiAmount()), e.getStatus()));
         }
+        TableUtil.printTable("PENDING EMIS FOR REPAYMENT", headers, rows);
 
-        Loan selected = loanDao.getLoanById(loanId);
-        if (selected == null || !selected.getCustomerId().equalsIgnoreCase(customerId)) {
-            throw new LoanNotFoundException("Loan ID '" + loanId + "' does not belong to your account.");
-        }
+        System.out.print("\nEnter EMI ID to pay (e.g. EMI1234): ");
+        String emiId = scanner.nextLine().trim();
 
-        if (!"APPROVED".equalsIgnoreCase(selected.getStatus())) {
-            System.out.println("--> Cannot pay EMI. Loan status is " + selected.getStatus());
+        EMI targetEmi = pendingEmis.stream().filter(e -> e.getEmiId().equalsIgnoreCase(emiId)).findFirst().orElse(null);
+        if (targetEmi == null) {
+            System.out.println("--> Invalid EMI ID selected.");
             return;
         }
 
-        System.out.printf("--> Monthly EMI Amount: INR %.2f%n", selected.calculateMonthlyEmi());
-        System.out.println(">>> EMI payment processed successfully! <<<");
+        emiDao.updateEmiPaidStatus(targetEmi.getEmiId());
+        System.out.printf("\n>>> EMI %s of INR %.2f PAID SUCCESSFULLY! <<<%n", targetEmi.getEmiId(), targetEmi.getEmiAmount());
     }
 
     public void renderLoanTable(String title, List<Loan> loans) {
