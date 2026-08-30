@@ -24,7 +24,7 @@ PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
                           value="root"/>
 
                 <property name="password"
-                          value="Aishu@215"/>
+                          value="****"/>
 
             </dataSource>
 
